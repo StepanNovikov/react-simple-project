@@ -1,4 +1,4 @@
-import React, {useState,useRef} from 'react';
+import React, {useState,useMemo} from 'react';
 import PostItem from './Components/PostItem';
 import PostList from './Components/PostList';
 import PostForm from './Components/PostForm';
@@ -19,6 +19,19 @@ function App() {
 
   const [posts,setPosts] = useState(postsInner);
   const [selectedSort,setSelectedSort] = useState('');
+  const [searchQuery,setSearchQuery] = useState('');
+
+  const sortedPosts = useMemo(()=>{
+    if(selectedSort) {
+      return [...posts].sort((a,b)=> a[selectedSort].localeCompare(b[selectedSort]))
+    } else {
+      return posts
+    }
+  },[selectedSort, posts]);
+
+  const sortedAndSearchedPosts = useMemo(()=>{
+    return sortedPosts.filter(post=>post.title.toLowerCase().includes(searchQuery.toLowerCase()))
+  },[searchQuery, posts])
 
   const createPost = (newPost) =>{
     setPosts([...posts,newPost])
@@ -30,20 +43,21 @@ function App() {
 
   const sortPosts = (sort) => {
     setSelectedSort(sort);
-    setPosts([...posts].sort((a,b)=> a[sort].localeCompare(b[sort])))
   }
+
 
   return (
     <div>
       <PostForm create={createPost}/>
       <hr style={{margin:'15px 0'}}/>
       <div>
+        <input type="text" placeholder="Поиск..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}/>
         <MySelect value={selectedSort} onChange={sortPosts} defaultValue="Сортировка" options={[
           {value:'title',name: 'По названию'},
           {value:'body',name:'По описанию'}]}/>
       </div>
-      {posts.length !==0
-      ?       <PostList remove={removePost} posts={posts} title="Список постов"/>
+      {sortedAndSearchedPosts.length !==0
+      ?       <PostList remove={removePost} posts={sortedAndSearchedPosts} title="Список постов"/>
       : <h1>Посты не найдены</h1>
       }
 
